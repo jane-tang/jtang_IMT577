@@ -149,8 +149,8 @@ INSERT INTO Dim_Product
      ,SP.Price AS ProductRetailPrice
      ,SP.WholesalePrice AS ProductWholesalePrice
      ,Cost AS ProductCost
-     ,(UnitofMeasureID * Price) - (UnitofMeasureID * Cost) AS ProductRetailProfit
-     ,(UnitofMeasureID * WholesalePrice) - (UnitofMeasureID * Cost) AS ProductWholesaleUnitProfit
+     ,(Price) - (Cost) AS ProductRetailProfit
+     ,(WholesalePrice) - (Cost) AS ProductWholesaleUnitProfit
      ,(Price - Cost) / (Price) AS ProductProfitMarginUnitPercent
      
 	FROM STAGE_PRODUCT AS SP
