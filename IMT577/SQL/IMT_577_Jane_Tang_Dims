@@ -409,18 +409,19 @@ INSERT INTO Dim_Customer
     ,EmailAddress 
     ,PhoneNumber
 )
-	SELECT 
-     CustomerID AS DimCustomerID
-     ,DimLocationID AS DimLocationID
-     ,CustomerID AS SourceCustomerID
+SELECT DISTINCT
+     SC.CustomerID AS DimCustomerID
+     ,DL.DimLocationID AS DimLocationID
+     ,SC.CustomerID AS SourceCustomerID
      ,CONCAT(FirstName,' ',LastName) AS FullName
-     ,FirstName AS FirstName
-     ,LastName AS LastName
-     ,Gender AS Gender
-     ,EmailAddress AS EmailAddress     
-     ,PhoneNumber AS PhoneNumber
+     ,SC.FirstName AS FirstName
+     ,SC.LastName AS LastName
+     ,SC.Gender AS Gender
+     ,SC.EmailAddress AS EmailAddress     
+     ,SC.PhoneNumber AS PhoneNumber
      
-	FROM STAGE_CUSTOMER, DIM_LOCATION;
+FROM STAGE_CUSTOMER AS SC
+    LEFT OUTER JOIN DIM_LOCATION AS DL ON SC.PostalCode = DL.PostalCode;
 
     
     SELECT * FROM Dim_Customer;
