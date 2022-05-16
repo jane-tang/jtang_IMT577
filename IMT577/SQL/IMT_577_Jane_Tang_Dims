@@ -336,16 +336,17 @@ INSERT INTO Dim_Reseller
     ,PhoneNumber
     ,Email
 )
-	SELECT 
-     ResellerID AS DimResellerID
-     ,DimLocationID AS DimLocationID
-     ,ResellerID AS SourceResellerID
-     ,ResellerName AS ResellerName
-     ,Contact AS ContactName
-     ,PhoneNumber AS PhoneNumber
-     ,EmailAddress AS Email
+SELECT DISTINCT
+     SR.ResellerID AS DimResellerID
+     ,DL.DimLocationID AS DimLocationID
+     ,SR.ResellerID AS SourceResellerID
+     ,SR.ResellerName AS ResellerName
+     ,SR.Contact AS ContactName
+     ,SR.PhoneNumber AS PhoneNumber
+     ,SR.EmailAddress AS Email
      
-	FROM STAGE_RESELLER, DIM_LOCATION;
+FROM STAGE_RESELLER AS SR
+    LEFT OUTER JOIN DIM_LOCATION AS DL ON SR.PostalCode = DL.PostalCode;
     
     SELECT * FROM Dim_Reseller;
     
