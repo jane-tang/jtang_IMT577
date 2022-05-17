@@ -14,8 +14,8 @@ Steps:
 
 --CREATE DIM_CHANNEL
 CREATE OR REPLACE TABLE Dim_Channel(
-    DimChannelID INT IDENTITY(1,1) CONSTRAINT PK_DimChannelID PRIMARY KEY NULL --Surrogate Key
-	,SourceChannelID INTEGER NULL --Natural Key
+    DimChannelID INT IDENTITY(1,1) CONSTRAINT PK_DimChannelID PRIMARY KEY NOT NULL --Surrogate Key
+    ,SourceChannelID INTEGER NULL --Natural Key
     ,SourceChannelCategoryID INTEGER NULL
     ,ChannelName VARCHAR(255) NULL
     ,ChannelCategory VARCHAR(255) NULL
@@ -24,7 +24,7 @@ CREATE OR REPLACE TABLE Dim_Channel(
 INSERT INTO Dim_Channel
 (
     DimChannelID
-	,SourceChannelID
+    ,SourceChannelID
     ,SourceChannelCategoryID
     ,ChannelName
     ,ChannelCategory
@@ -42,29 +42,20 @@ SELECT * FROM Dim_Channel;
 
 INSERT INTO Dim_Channel
 (
-    DimChannelID
-	,SourceChannelID
+    SourceChannelID
     ,SourceChannelCategoryID
     ,ChannelName
     ,ChannelCategory
 )
 
 SELECT
-    ChannelID AS DimChannelID
-    ,ChannelID AS SourceChannelID
-    ,NULL AS SourceChannelCategoryID
-    ,Channel AS ChannelName
-    ,NULL AS ChannelCategory
+    C.ChannelID AS SourceChannelID
+    ,CC.ChannelCategoryID AS SourceChannelCategoryID
+    ,C.Channel AS ChannelName
+    ,CC.ChannelCategory AS ChannelCategory
     
-FROM STAGE_CHANNEL
-UNION
-SELECT
-    ChannelCategoryID AS DimChannelID
-    ,NULL AS SourceChannelID
-    ,ChannelCategoryID AS SourceChannelCategoryID
-    ,NULL AS ChannelName
-    ,ChannelCategory AS ChannelCategory
-FROM STAGE_CHANNELCATEGORY;
+FROM STAGE_CHANNEL AS C
+INNER JOIN STAGE_CHANNELCATEGORY AS CC ON C.ChannelCategoryID = CC.ChannelCategoryID;
 
 SELECT * FROM Dim_Channel;
 
@@ -161,9 +152,9 @@ INSERT INTO Dim_Product
  
  
  --Create Dim_Location Table
- CREATE OR REPLACE TABLE Dim_Location(
+CREATE OR REPLACE TABLE Dim_Location(
     DimLocationID INT IDENTITY(1,1) CONSTRAINT PK_DimLocationID PRIMARY KEY NOT NULL --Surrogate Key
-	,SourceLocationID INT IDENTITY(1,1) NOT NULL --Natural Key
+	,SourceLocationID VARCHAR(255) NOT NULL
     ,PostalCode VARCHAR(255) NOT NULL    
     ,Address VARCHAR(255) NOT NULL
     ,City VARCHAR(255) NOT NULL
@@ -198,14 +189,16 @@ SELECT * FROM Dim_Location;
 --Load location
 INSERT INTO Dim_Location
 (
-    PostalCode    
+	SourceLocationID    
+    ,PostalCode    
     ,Address
     ,City
     ,Region
     ,Country
 )
 	SELECT 
-     PostalCode
+     CAST(STAGE_STORE.StoreID AS VARCHAR(255))     
+     ,PostalCode
      ,Address
      ,City
      ,StateProvince AS Region
@@ -213,7 +206,8 @@ INSERT INTO Dim_Location
      FROM STAGE_STORE
 UNION 
      SELECT 
-     PostalCode
+     CAST(STAGE_RESELLER.ResellerID AS VARCHAR(255))         
+     ,PostalCode
      ,Address
      ,City
      ,StateProvince AS Region
@@ -221,7 +215,8 @@ UNION
      FROM STAGE_RESELLER
 UNION 
      SELECT 
-     PostalCode
+     CAST(STAGE_CUSTOMER.CustomerID AS VARCHAR(255))        
+     ,PostalCode
      ,Address
      ,City
      ,StateProvince AS Region
@@ -229,7 +224,6 @@ UNION
      FROM STAGE_CUSTOMER;
      
 SELECT * FROM Dim_Location;
-
 
 --Creating Dim_Store Table
 CREATE OR REPLACE TABLE Dim_Store(
