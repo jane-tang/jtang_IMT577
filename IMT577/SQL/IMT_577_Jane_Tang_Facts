@@ -1,0 +1,146 @@
+/*****************************************
+Course: IMT 577
+Instructor: Sean Pettersen
+Name: Jane Tang
+Module 7.11 Create Fact Tables & Load Data
+Date: 05/17/2022
+Notes: Create dimension tables & load.
+
+Notes: Create fact tables & load.
+
+Steps:
+    1. Create fact tables
+    2. Load Data
+*****************************************/
+
+--Creating Fact_ProductSalesTarget
+CREATE TABLE Fact_ProductSalesTarget
+(
+     DimProductID INTEGER CONSTRAINT FK_DimProductID FOREIGN KEY REFERENCES Dim_Product(DimProductID) NOT NULL--Foreign Key
+    ,DimTargetDateID NUMBER(9) CONSTRAINT FK_DimTargetDateID FOREIGN KEY REFERENCES Dim_Date(DATE_PKEY) NULL--Foreign Key
+    ,ProductTargetSalesQuantity INT
+);
+
+INSERT INTO Fact_ProductSalesTarget
+(
+     DimProductID
+    ,DimTargetDateID
+    ,ProductTargetSalesQuantity
+)
+	SELECT  
+		  P.DimProductID AS DimProductID
+		 ,D.DATE_PKEY AS DimTargetDateID
+         ,TDP.SalesQuantityTarget AS ProductTargetSalesQuantity
+	FROM Stage_TargetDataProduct AS TDP
+	INNER JOIN Dim_Product AS P ON P.SourceProductID = TDP.ProductID
+    LEFT OUTER JOIN Dim_Date AS D ON TDP.YEAR = D.YEAR;
+    
+SELECT * FROM Fact_ProductSalesTarget;	
+
+
+--Creating Fact_SRCSalesTarget
+CREATE TABLE Fact_SRCSalesTarget
+(
+     DimStoreID NUMBER(38,0) CONSTRAINT FK_DimStoreID FOREIGN KEY REFERENCES Dim_Store(DimStoreID) NULL--Foreign Key
+    ,DimResellerID VARCHAR(255) CONSTRAINT FK_DimResellerID FOREIGN KEY REFERENCES Dim_Reseller(DimResellerID) NULL--Foreign Key
+    ,DimChannelID NUMBER(38,0) CONSTRAINT FK_DimChannelID FOREIGN KEY REFERENCES Dim_Channel(DimChannelID) NULL--Foreign Key
+    ,DimTargetDateID NUMBER(9) CONSTRAINT FK_DimTargetDateID FOREIGN KEY REFERENCES Dim_Date(DATE_PKEY) NULL--Foreign Key 
+    ,SalesTargetAmount INT
+);
+
+INSERT INTO Fact_SRCSalesTarget
+(
+     DimStoreID
+    ,DimResellerID
+    ,DimChannelID
+    ,DimTargetDateID
+    ,SalesTargetAmount
+)
+	SELECT
+        S.DimStoreID AS DimStoreID
+        ,NVL(R.DimResellerID, '-1') AS DimResellerID
+        ,C.DimChannelID AS DimChannelID
+        ,D.YEAR AS DimTargetDateID
+        ,TDC.TargetSalesAmount AS SalesTargetAmount 
+    FROM STAGE_TARGETDATACHANNEL AS TDC 
+    INNER JOIN DIM_CHANNEL AS C ON C.ChannelName = CASE WHEN TDC.ChannelName = 'Online'THEN 'On-line' ELSE TDC.ChannelName END
+    INNER JOIN DIM_RESELLER AS R ON R.ResellerName = TDC.TargetName
+/*    CASE 
+        WHEN TDC.TargetName = 'Store Number 5' then 5
+        WHEN TDC.TargetName = 'Store Number 34' then 34
+        WHEN TDC.TargetName = 'Store Number 39' then 39
+        WHEN TDC.TargetName = 'Store Number 21' then 21
+        WHEN TDC.TargetName = 'Store Number 8' then 8
+        WHEN TDC.TargetName = 'Store Number 10' then 10
+    ELSE CAST(TargetName AS VARCHAR(255) 
+    END */
+    LEFT OUTER JOIN DIM_STORE AS S ON TDC.YEAR = S.StoreNumber
+    LEFT OUTER JOIN Dim_Date AS D ON TDC.YEAR = D.YEAR;
+    
+SELECT * FROM Fact_SRCSalesTarget;    
+    
+
+--Creating Fact_SalesActual
+CREATE TABLE Fact_SalesActual
+(
+     DimProductID INTEGER CONSTRAINT FK_DimProductID FOREIGN KEY REFERENCES Dim_Product(DimProductID) NULL--Foreign Key
+    ,DimStoreID NUMBER(38,0) CONSTRAINT FK_DimStoreID FOREIGN KEY REFERENCES Dim_Store(DimStoreID) NULL--Foreign Key 
+    ,DimResellerID VARCHAR(255) CONSTRAINT FK_DimResellerID FOREIGN KEY REFERENCES Dim_Reseller(DimResellerID) NULL--Foreign Key
+    ,DimCustomerID VARCHAR(255) CONSTRAINT FK_DimCustomerID FOREIGN KEY REFERENCES Dim_Customer(DimCustomerID) NULL--Foreign Key 
+    ,DimChannelID NUMBER(38,0) CONSTRAINT FK_DimChannelID FOREIGN KEY REFERENCES Dim_Channel(DimChannelID) NULL--Foreign Key 
+    ,DimSalesDateID NUMBER(9,0) CONSTRAINT FK_DimSalesDateID FOREIGN KEY REFERENCES Dim_Date(DATE_PKEY) NULL--Foreign Key
+    ,DimLocationID NUMBER(38,0) CONSTRAINT FK_DimLocationID FOREIGN KEY REFERENCES Dim_Location(DimLocationID) NULL--Foreign Key
+    ,SalesHeaderID NUMBER(38,0)
+    ,SalesDetailID NUMBER(38,0)
+    ,SalesAmount FLOAT
+    ,SalesQuantity NUMBER(38,0)
+    ,SaleUnitPrice FLOAT
+    ,SaleExtendedCost FLOAT
+    ,SaleTotalProfit FLOAT
+);
+
+
+INSERT INTO Fact_SalesActual
+(
+     DimProductID
+    ,DimStoreID
+    ,DimResellerID
+    ,DimCustomerID 
+    ,DimChannelID
+    ,DimSalesDateID
+    ,DimLocationID
+    ,SalesHeaderID
+    ,SalesDetailID
+    ,SalesAmount
+    ,SalesQuantity
+    ,SaleUnitPrice
+    ,SaleExtendedCost
+    ,SaleTotalProfit
+)
+	SELECT DISTINCT 
+       NVL(P.DimProductID, -1) AS DimProductID
+      ,NVL(S.DimStoreID, -1) AS DimStoreID
+      ,NVL(R.DimResellerID, 'Unknown') AS DimResellerID 
+      ,NVL(C.DimCustomerID, 'Unknown') AS DimCustomerID 
+      ,NVL(CH.DimChannelID, -1) AS DimChannelID
+      ,NVL(D.Date_PKey, -1) AS DimSalesDateID
+      ,NVL(L.DimLocationID, -1) AS DimLocationID
+      ,NVL(SH.SalesHeaderID, -1) AS SalesHeaderID
+      ,NVL(SD.SalesDetailID, -1) AS SalesDetailID
+      ,NVL(SD.SalesAmount, -1) AS SalesAmount
+      ,NVL(SD.SalesQuantity, -1) AS SalesQuantity
+      ,NVL((SD.SalesAmount / SD.SalesQuantity),-1) AS SaleUnitPrice
+      ,NVL((P.ProductCost * SD.SalesQuantity), -1) AS SaleExtendedCost
+      ,NVL((SD.SalesAmount - SaleExtendedCost), -1) AS SaleTotalProfit
+--Sales Profit (Quantity × Price) − (Quantity × Cost)      
+	FROM Stage_SalesHeader AS SH
+    LEFT OUTER JOIN Stage_SalesDetail AS SD ON SH.SalesHeaderID = SD.SalesDetailID    
+    LEFT OUTER JOIN Dim_Store AS S ON S.SourceStoreID = SH.StoreID
+    LEFT OUTER JOIN Dim_Reseller AS R ON R.SourceResellerID = SH.ResellerID
+    LEFT OUTER JOIN Dim_Customer AS C ON C.SourceCustomerID = SH.CustomerID
+    LEFT OUTER JOIN Dim_Channel AS CH ON CH.SourceChannelID = SH.ChannelID
+    LEFT OUTER JOIN Dim_Date AS D ON D.Date = SH.Date
+    LEFT OUTER JOIN Dim_Location AS L ON C.SourceCustomerID = L.SourceLocationID
+    LEFT OUTER JOIN Dim_Product AS P ON P.SourceProductID = SD.ProductID;
+
+SELECT * FROM Fact_SalesActual;	
