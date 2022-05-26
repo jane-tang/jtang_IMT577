@@ -282,25 +282,23 @@ INSERT INTO Dim_Store
 
 --Creating Dim_Reseller Table
 CREATE OR REPLACE TABLE Dim_Reseller(
-    DimResellerID VARCHAR(255) CONSTRAINT PK_DimResellerID PRIMARY KEY NOT NULL
+    DimResellerID INT IDENTITY(1,1) CONSTRAINT PK_DimResellerID PRIMARY KEY NOT NULL
 	,DimLocationID INTEGER NOT NULL
     ,CONSTRAINT FK_location_reseller FOREIGN KEY (DimLocationID)
     REFERENCES Dim_Location(DimLocationID) 
-    ,SourceResellerID VARCHAR(255) NOT NULL
+    ,ResellerID VARCHAR(255) NOT NULL
     ,ResellerName VARCHAR(255) NOT NULL
     ,ContactName VARCHAR(255) NOT NULL
     ,PhoneNumber VARCHAR(255) NOT NULL
     ,Email VARCHAR(255) NOT NULL
 );
 
-SELECT * FROM Dim_Reseller;
-
 --Load unknown members
 INSERT INTO Dim_Reseller
 (
     DimResellerID
 	,DimLocationID 
-    ,SourceResellerID
+    ,ResellerID
     ,ResellerName
     ,ContactName
     ,PhoneNumber
@@ -308,7 +306,7 @@ INSERT INTO Dim_Reseller
 )
 VALUES
 ( 
-     'Unknown'
+     -1
     ,-1
     ,'Unknown'
     ,'Unknown'
@@ -319,39 +317,37 @@ VALUES
 
 SELECT * FROM Dim_Reseller;
 
---Load characters
+--Load into Dim_Reseller
 INSERT INTO Dim_Reseller
 (
-    DimResellerID
-    ,DimLocationID 
-    ,SourceResellerID
+    DimLocationID 
+    ,ResellerID
     ,ResellerName
     ,ContactName
     ,PhoneNumber
     ,Email
 )
-SELECT DISTINCT
-     SR.ResellerID AS DimResellerID
-     ,DL.DimLocationID AS DimLocationID
-     ,SR.ResellerID AS SourceResellerID
+	SELECT DISTINCT
+     DL.DimLocationID AS DimLocationID
+     ,SR.ResellerID AS ResellerID
      ,SR.ResellerName AS ResellerName
      ,SR.Contact AS ContactName
      ,SR.PhoneNumber AS PhoneNumber
      ,SR.EmailAddress AS Email
      
-FROM STAGE_RESELLER AS SR
+	FROM STAGE_RESELLER AS SR
     LEFT OUTER JOIN DIM_LOCATION AS DL ON SR.PostalCode = DL.PostalCode;
     
-    SELECT * FROM Dim_Reseller;
+SELECT * FROM Dim_Reseller;
     
 
 --Creating Dim_Customer Table
 CREATE OR REPLACE TABLE Dim_Customer(
-    DimCustomerID VARCHAR(255) CONSTRAINT PK_DimCustomerID PRIMARY KEY NOT NULL
+    DimCustomerID INT IDENTITY(1,1) CONSTRAINT PK_DimCustomerID PRIMARY KEY NOT NULL
 	,DimLocationID INTEGER NOT NULL
     ,CONSTRAINT FK_location_customer FOREIGN KEY (DimLocationID)
     REFERENCES Dim_Location(DimLocationID) 
-    ,SourceCustomerID VARCHAR(255) NOT NULL
+    ,CustomerID VARCHAR(255) NOT NULL
     ,FullName VARCHAR(255) NOT NULL
     ,FirstName VARCHAR(255) NOT NULL
     ,LastName VARCHAR(255) NOT NULL
@@ -360,14 +356,12 @@ CREATE OR REPLACE TABLE Dim_Customer(
     ,PhoneNumber VARCHAR(255) NOT NULL
 );
 
-SELECT * FROM Dim_Customer;
-
 --Load unknown members
 INSERT INTO Dim_Customer
 (
     DimCustomerID
 	,DimLocationID
-    ,SourceCustomerID
+    ,CustomerID
     ,FullName
     ,FirstName
     ,LastName
@@ -377,7 +371,7 @@ INSERT INTO Dim_Customer
 )
 VALUES
 ( 
-     'Unknown'
+     -1
     ,-1
     ,'Unknown'
     ,'Unknown'
@@ -390,12 +384,11 @@ VALUES
 
 SELECT * FROM Dim_Customer;
 
---Load characters
+--Load into Dim_Customer
 INSERT INTO Dim_Customer
 (
-    DimCustomerID
-	,DimLocationID
-    ,SourceCustomerID
+	DimLocationID
+    ,CustomerID
     ,FullName
     ,FirstName
     ,LastName
@@ -403,10 +396,9 @@ INSERT INTO Dim_Customer
     ,EmailAddress 
     ,PhoneNumber
 )
-SELECT DISTINCT
-     SC.CustomerID AS DimCustomerID
-     ,DL.DimLocationID AS DimLocationID
-     ,SC.CustomerID AS SourceCustomerID
+	SELECT DISTINCT
+     DL.DimLocationID AS DimLocationID
+     ,SC.CustomerID AS CustomerID
      ,CONCAT(FirstName,' ',LastName) AS FullName
      ,SC.FirstName AS FirstName
      ,SC.LastName AS LastName
@@ -414,11 +406,10 @@ SELECT DISTINCT
      ,SC.EmailAddress AS EmailAddress     
      ,SC.PhoneNumber AS PhoneNumber
      
-FROM STAGE_CUSTOMER AS SC
+	FROM STAGE_CUSTOMER AS SC
     LEFT OUTER JOIN DIM_LOCATION AS DL ON SC.PostalCode = DL.PostalCode;
-
     
-    SELECT * FROM Dim_Customer;
+SELECT * FROM Dim_Customer;
     
   
 --===================================================
