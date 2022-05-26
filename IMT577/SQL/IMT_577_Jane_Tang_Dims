@@ -227,23 +227,21 @@ SELECT * FROM Dim_Location;
 
 --Creating Dim_Store Table
 CREATE OR REPLACE TABLE Dim_Store(
-    DimStoreID NUMBER(38,0) IDENTITY(1,1) CONSTRAINT PK_DimStoreID PRIMARY KEY NOT NULL
+    DimStoreID INTEGER IDENTITY(1,1) CONSTRAINT PK_DimStoreID PRIMARY KEY NOT NULL
 	,DimLocationID INTEGER NOT NULL
     ,CONSTRAINT FK_location_store FOREIGN KEY (DimLocationID)
     REFERENCES Dim_Location(DimLocationID) 
-    ,SourceStoreID NUMBER(38,0) IDENTITY(1,1) NOT NULL
+    ,StoreID NUMBER(38,0) IDENTITY(1,1) NOT NULL
     ,StoreNumber NUMBER(38,0) NOT NULL
     ,StoreManager VARCHAR(255) NOT NULL
 );
-
-SELECT * FROM Dim_Store;
 
 --Load unknown members
 INSERT INTO Dim_Store
 (
     DimStoreID
 	,DimLocationID
-    ,SourceStoreID
+    ,StoreID
     ,StoreNumber
     ,StoreManager
 )
@@ -258,26 +256,24 @@ VALUES
 
 SELECT * FROM Dim_Store;
 
---Load characters
+--Load into Dim_Store
 INSERT INTO Dim_Store
 (
-    DimStoreID
-    ,DimLocationID
-    ,SourceStoreID
+    DimLocationID
+    ,StoreID
     ,StoreNumber
     ,StoreManager
 )
 	SELECT 
-	  StoreID AS DimStoreID
-     ,DimLocationID AS DimLocationID
-     ,StoreID AS SourceStoreID
+     DimLocationID AS DimLocationID
+     ,StoreID AS StoreID
      ,StoreNumber AS StoreNumber
      ,StoreManager AS StoreManager
      
 	FROM STAGE_STORE
     LEFT OUTER JOIN DIM_LOCATION ON Dim_Location.DimLocationID = STAGE_STORE.StoreID;
-    
-    SELECT * FROM Dim_Store;
+   
+SELECT * FROM Dim_Store;
 
 
 --Creating Dim_Reseller Table
