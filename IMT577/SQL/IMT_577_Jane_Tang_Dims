@@ -231,7 +231,7 @@ CREATE OR REPLACE TABLE Dim_Store(
 	,DimLocationID INTEGER NOT NULL
     ,CONSTRAINT FK_location_store FOREIGN KEY (DimLocationID)
     REFERENCES Dim_Location(DimLocationID) 
-    ,StoreID NUMBER(38,0) IDENTITY(1,1) NOT NULL
+    ,StoreID INTEGER NOT NULL
     ,StoreNumber NUMBER(38,0) NOT NULL
     ,StoreManager VARCHAR(255) NOT NULL
 );
