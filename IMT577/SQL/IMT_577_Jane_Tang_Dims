@@ -15,8 +15,8 @@ Steps:
 --CREATE DIM_CHANNEL
 CREATE OR REPLACE TABLE Dim_Channel(
     DimChannelID INT IDENTITY(1,1) CONSTRAINT PK_DimChannelID PRIMARY KEY NOT NULL --Surrogate Key
-    ,SourceChannelID INTEGER NULL --Natural Key
-    ,SourceChannelCategoryID INTEGER NULL
+	,ChannelID INT NULL --Natural Key
+    ,ChannelCategoryID INT NULL
     ,ChannelName VARCHAR(255) NULL
     ,ChannelCategory VARCHAR(255) NULL
 );
@@ -24,8 +24,8 @@ CREATE OR REPLACE TABLE Dim_Channel(
 INSERT INTO Dim_Channel
 (
     DimChannelID
-    ,SourceChannelID
-    ,SourceChannelCategoryID
+	,ChannelID
+    ,ChannelCategoryID
     ,ChannelName
     ,ChannelCategory
 )
@@ -42,15 +42,15 @@ SELECT * FROM Dim_Channel;
 
 INSERT INTO Dim_Channel
 (
-    SourceChannelID
-    ,SourceChannelCategoryID
+	ChannelID
+    ,ChannelCategoryID
     ,ChannelName
     ,ChannelCategory
 )
 
 SELECT
-    C.ChannelID AS SourceChannelID
-    ,CC.ChannelCategoryID AS SourceChannelCategoryID
+    C.ChannelID AS ChannelID
+    ,CC.ChannelCategoryID AS ChannelCategoryID
     ,C.Channel AS ChannelName
     ,CC.ChannelCategory AS ChannelCategory
     
