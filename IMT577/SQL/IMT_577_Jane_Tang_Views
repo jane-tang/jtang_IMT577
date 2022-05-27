@@ -1,0 +1,215 @@
+/*****************************************
+Course: IMT 577
+Instructor: Sean Pettersen
+Name: Jane Tang
+Module 8.15 Final Data Warehouse Submission
+Date: 5/26/2022
+Notes:
+    1. Create simple view
+    2. Create aggregate view
+*****************************************/
+
+--Simple Views
+CREATE SECURE VIEW Dim_Channel_View
+AS
+SELECT
+    DimChannelID
+	,ChannelID
+    ,ChannelCategoryID
+    ,ChannelName
+    ,ChannelCategory
+FROM Dim_Channel;
+
+
+CREATE SECURE VIEW Dim_Product_View
+AS
+SELECT
+    DimProductID
+	,SourceProductID
+	,SourceProductTypeID
+	,SourceProductCategoryID
+    ,ProductName
+    ,ProductType
+    ,ProductCategory
+    ,ProductRetailPrice
+    ,ProductWholesalePrice
+    ,ProductCost
+    ,ProductRetailProfit
+    ,ProductWholesaleUnitProfit
+    ,ProductProfitMarginUnitPercent
+FROM DIM_PRODUCT;
+
+
+CREATE SECURE VIEW Dim_Location_View
+AS
+SELECT
+    DimLocationID 
+	,SourceLocationID
+    ,PostalCode  
+    ,Address
+    ,City
+    ,Region
+    ,Country
+FROM DIM_LOCATION;
+
+
+CREATE SECURE VIEW Dim_Store_View
+AS
+SELECT
+    DimStoreID
+	,DimLocationID
+    ,StoreID
+    ,StoreNumber
+    ,StoreManager
+FROM DIM_STORE;
+
+
+CREATE SECURE VIEW Dim_Reseller_View
+AS
+SELECT
+    DimResellerID
+	,DimLocationID 
+    ,ResellerID
+    ,ResellerName
+    ,ContactName
+    ,PhoneNumber
+    ,Email
+FROM DIM_RESELLER;
+
+
+CREATE SECURE VIEW Dim_Customer_View
+AS
+SELECT
+    DimCustomerID
+	,DimLocationID
+    ,CustomerID
+    ,FullName
+    ,FirstName
+    ,LastName
+    ,Gender
+    ,EmailAddress  
+    ,PhoneNumber
+FROM DIM_CUSTOMER;
+
+
+CREATE SECURE VIEW Dim_Date_View
+AS
+SELECT
+        DATE_PKEY,
+		DATE,
+        FULL_DATE_DESC,
+		DAY_NUM_IN_WEEK,
+		DAY_NUM_IN_MONTH,
+		DAY_NUM_IN_YEAR,
+		DAY_NAME,
+		DAY_ABBREV,
+		WEEKDAY_IND,
+		US_HOLIDAY_IND,
+        /*<COMPANYNAME>*/_HOLIDAY_IND,
+		MONTH_END_IND,
+		WEEK_BEGIN_DATE_NKEY,
+		WEEK_BEGIN_DATE,
+		WEEK_END_DATE_NKEY,
+		WEEK_END_DATE,
+		WEEK_NUM_IN_YEAR,
+		MONTH_NAME,
+		MONTH_ABBREV,
+		MONTH_NUM_IN_YEAR,
+		YEARMONTH,
+		QUARTER,
+		YEARQUARTER,
+		YEAR,
+		FISCAL_WEEK_NUM,
+		FISCAL_MONTH_NUM,
+		FISCAL_YEARMONTH,
+		FISCAL_QUARTER,
+		FISCAL_YEARQUARTER,
+		FISCAL_HALFYEAR,
+		FISCAL_YEAR,
+		SQL_TIMESTAMP,
+		CURRENT_ROW_IND,
+		EFFECTIVE_DATE,
+		EXPIRATION_DATE
+FROM DIM_DATE;
+
+
+CREATE SECURE VIEW Fact_ProductSalesTarget_View
+AS
+SELECT
+     DimProductID
+    ,DimTargetDateID
+    ,ProductTargetSalesQuantity
+FROM Fact_ProductSalesTarget;
+
+
+CREATE SECURE VIEW Fact_SRCSalesTarget_View
+AS
+SELECT
+     DimStoreID
+    ,DimResellerID
+    ,DimChannelID
+    ,DimTargetDateID
+    ,SalesTargetAmount
+FROM Fact_SRCSalesTarget;
+
+
+CREATE SECURE VIEW Fact_SalesActual_View
+AS
+SELECT
+     DimProductID
+    ,DimStoreID
+    ,DimResellerID
+    ,DimCustomerID
+    ,DimChannelID
+    ,DimSalesDateID
+    ,DimLocationID
+    ,SalesHeaderID
+    ,SalesDetailID
+    ,SalesAmount
+    ,SalesQuantity
+    ,SaleUnitPrice
+    ,SaleExtendedCost
+    ,SaleTotalProfit
+FROM Fact_SalesActual;
+
+
+--Aggregate Views
+--View 1: How are stores 5 and 8 sales compared to target?
+CREATE SECURE VIEW STORES_5_8_SALES
+AS
+SELECT DISTINCT
+    S.StoreID
+    ,S.StoreNumber
+    ,FSA.SalesAmount
+    ,FSRC.SalesTargetAmount
+    
+FROM Fact_SRCSalesTarget AS FSRC
+    LEFT OUTER JOIN FACT_SALESACTUAL AS FSA ON FSA.DimStoreID = FSRC.DimStoreID
+    LEFT OUTER JOIN DIM_STORE AS S ON S.DimStoreID = FSA.DimStoreID
+    LEFT OUTER JOIN DIM_DATE AS D ON D.Date_PKey = FSA.DimSalesDateID
+WHERE S.StoreID = 5 OR S.StoreID = 8;
+
+--View 2: Daily product sales for stores 5 and 8
+CREATE SECURE VIEW STORES_5_8_DAILY_PRODUCT_SALES
+AS
+SELECT DISTINCT
+    FSA.DimStoreID
+    ,S.StoreNumber
+    ,FSA.SalesQuantity
+    ,FSA.SalesAmount
+FROM FACT_SALESACTUAL AS FSA
+    LEFT OUTER JOIN DIM_STORE AS S ON S.DimStoreID = FSA.DimStoreID
+    LEFT OUTER JOIN DIM_DATE AS D ON FSA.DIMSALESDATEID = D.DATE_PKEY;
+    
+--View 3: Sales for Men's Casual and Women's Casual
+CREATE SECURE VIEW SALES_MENS_WOMENS_CASUAL
+AS
+SELECT DISTINCT
+    FSA.DimProductID
+    ,FSA.SalesAmount
+    ,P.ProductType
+FROM Fact_SalesActual AS FSA
+    LEFT OUTER JOIN Dim_Product AS P ON FSA.DimProductID = P.DimProductID
+    LEFT OUTER JOIN DIM_DATE AS D ON FSA.DIMSALESDATEID = D.DATE_PKEY
+WHERE P.ProductType = 'Men''s Casual' OR P.ProductType = 'Women''s Casual'
+AND D.YEAR = 2013 OR D.YEAR = 2014;
