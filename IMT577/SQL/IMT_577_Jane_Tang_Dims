@@ -152,7 +152,7 @@ INSERT INTO Dim_Product
  
  
  --Create Dim_Location Table
-CREATE OR REPLACE TABLE Dim_Location(
+ CREATE OR REPLACE TABLE Dim_Location(
     DimLocationID INT IDENTITY(1,1) CONSTRAINT PK_DimLocationID PRIMARY KEY NOT NULL --Surrogate Key
 	,SourceLocationID VARCHAR(255) NOT NULL
     ,PostalCode VARCHAR(255) NOT NULL    
@@ -224,6 +224,7 @@ UNION
      FROM STAGE_CUSTOMER;
      
 SELECT * FROM Dim_Location;
+
 
 --Creating Dim_Store Table
 CREATE OR REPLACE TABLE Dim_Store(
