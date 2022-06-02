@@ -213,3 +213,128 @@ FROM Fact_SalesActual AS FSA
     LEFT OUTER JOIN DIM_DATE AS D ON FSA.DIMSALESDATEID = D.DATE_PKEY
 WHERE P.ProductType = 'Men''s Casual' OR P.ProductType = 'Women''s Casual'
 AND D.YEAR = 2013 OR D.YEAR = 2014;
+
+
+--View 4: Sales for Stores 5 & 8 by Product
+CREATE SECURE VIEW PRODUCT_SALES_STORE_5_8
+AS
+SELECT DISTINCT
+    FSA.DimStoreID
+    ,FSA.SalesAmount
+    ,P.ProductType
+FROM Fact_SalesActual AS FSA
+    LEFT OUTER JOIN Dim_Product AS P ON FSA.DimProductID = P.DimProductID
+    LEFT OUTER JOIN DIM_DATE AS D ON P.DimProductID = D.DATE_PKEY
+WHERE FSA.DimStoreID = 1 OR FSA.DimStoreID = 5
+ORDER BY FSA.DimStoreID;
+
+SELECT * FROM PRODUCT_SALES_STORE_5_8;
+
+
+--View 5: Target Sales for Stores 5 & 8 by Product (Missing 8 - NULLS)
+CREATE SECURE VIEW PRODUCT_TARGET_STORE_5_8
+AS
+SELECT DISTINCT
+    FST.DimStoreID
+    ,FST.SalesTargetAmount
+    ,P.ProductType
+FROM Fact_SRCSalesTarget AS FST
+    LEFT OUTER JOIN Fact_SalesActual AS FSA ON FSA.DimStoreID = FST.DimStoreID
+    LEFT OUTER JOIN Dim_Product AS P ON FSA.DimProductID = P.DimProductID
+    LEFT OUTER JOIN DIM_DATE AS D ON P.DimProductID = D.DATE_PKEY
+WHERE FST.DimStoreID = 1 OR FST.DimStoreID = 5
+ORDER BY FST.DimStoreID;
+
+SELECT * FROM PRODUCT_TARGET_STORE_5_8;
+
+
+--View 6: Product Target Quantity for Stores 5 & 8
+CREATE SECURE VIEW PRODUCT_Target_Quantity
+AS
+SELECT DISTINCT
+    PST.DimTargetDateID
+    ,NVL(S.DimStoreID, -1) AS DimStoreID
+    ,PST.ProductTargetSalesQuantity
+    ,P.ProductType
+FROM Fact_ProductSalesTarget AS PST
+    LEFT OUTER JOIN Dim_Store AS S ON PST.DimProductID = S.DimStoreID
+    LEFT OUTER JOIN Dim_Product AS P ON PST.DimProductID = P.DimProductID
+ORDER BY DimStoreID;
+--WHERE P.ProductType = 'Men''s Casual' OR P.ProductType = 'Women''s Casual';
+    
+SELECT * FROM PRODUCT_Target_Quantity;
+    
+
+--View 7: Product Target Sales for Stores 5 & 8
+CREATE SECURE VIEW PRODUCT_Target_Sales
+AS
+SELECT DISTINCT
+    SRC.DimTargetDateID
+    ,NVL(S.DimStoreID, -1) AS DimStoreID
+    ,SRC.SalesTargetAmount
+    ,P.ProductType
+FROM Fact_SRCSalesTarget AS SRC
+    LEFT OUTER JOIN Dim_Store AS S ON SRC.DimStoreID = S.DimStoreID
+    LEFT OUTER JOIN Dim_Product AS P ON SRC.DimStoreID = P.DimProductID
+--WHERE P.ProductType = 'Men''s Casual' OR P.ProductType = 'Women''s Casual'
+ORDER BY DimStoreID;
+    
+SELECT * FROM PRODUCT_Target_Sales;
+
+
+--View 8: Day of the Week Sales
+CREATE SECURE VIEW DAILY_SALES
+AS
+SELECT DISTINCT
+    TO_VARCHAR(SH.Date::date, 'DY') AS DayofWeek
+    ,FSA.SalesAmount
+    ,FSA.DimStoreID
+FROM Fact_SalesActual AS FSA
+    LEFT OUTER JOIN STAGE_SALESHEADER AS SH ON FSA.SalesheaderID = SH.SalesheaderID
+    LEFT OUTER JOIN Dim_Store AS S ON FSA.DimStoreID = S.DimStoreID
+WHERE FSA.DimStoreID = 1 OR FSA.DimStoreID = 5;
+
+SELECT * FROM DAILY_SALES;
+
+
+--view 9: state store comparison
+CREATE SECURE VIEW STATE_STORE_SALES
+AS
+SELECT
+    L.Region
+    ,FSA.SalesAmount
+FROM Fact_SalesActual AS FSA
+    LEFT OUTER JOIN Dim_Location AS L ON FSA.DimLocationID = L.DimLocationID
+ORDER BY L.Region;
+    
+SELECT * FROM STATE_STORE_SALES;     
+
+
+--view 10: sales amount performance
+CREATE SECURE VIEW ACTUAL_SALES
+AS
+SELECT
+    TO_VARCHAR(SH.Date::date, 'YY') AS Year
+    ,FSA.DimStoreID
+    ,FSA.SalesAmount
+FROM Fact_SalesActual AS FSA
+    LEFT OUTER JOIN STAGE_SALESHEADER AS SH ON FSA.SalesheaderID = SH.SalesheaderID
+ORDER BY DimStoreID;
+
+SELECT * FROM ACTUAL_SALES
+
+
+-- VIEW 11: Compare profits for bonus recommendation
+CREATE SECURE VIEW BONUS_INCENTIVE
+AS
+SELECT
+    TO_VARCHAR(SH.Date::date, 'YY') AS Year
+    ,FSA.DimStoreID
+    ,FSA.SaleTotalProfit
+    ,P.ProductType
+FROM Fact_SalesActual AS FSA
+    LEFT OUTER JOIN Dim_Product AS P ON FSA.DimProductID = P.DimProductID
+    LEFT OUTER JOIN STAGE_SALESHEADER AS SH ON FSA.SalesheaderID = SH.SalesheaderID
+WHERE FSA.DimStoreID = 1 OR FSA.DimStoreID = 5;
+
+SELECT * FROM BONUS_INCENTIVE;
